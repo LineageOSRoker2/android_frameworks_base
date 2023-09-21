@@ -45,8 +45,6 @@ public abstract class InternalEnumerateClient<T> extends HalClientMonitor<T>
     // List of templates to remove from the HAL
     private List<BiometricAuthenticator.Identifier> mUnknownHALTemplates = new ArrayList<>();
 
-    private boolean mCleanup;
-
     protected InternalEnumerateClient(@NonNull Context context, @NonNull Supplier<T> lazyDaemon,
             @NonNull IBinder token, int userId, @NonNull String owner,
             @NonNull List<? extends BiometricAuthenticator.Identifier> enrolledList,
@@ -60,8 +58,6 @@ public abstract class InternalEnumerateClient<T> extends HalClientMonitor<T>
           //      BiometricsProtoEnums.CLIENT_UNKNOWN);
         mEnrolledList = enrolledList;
         mUtils = utils;
-        mCleanup = context.getResources().getBoolean(
-                 com.android.internal.R.bool.config_cleanupUnusedFingerprints);
     }
 
     @Override
@@ -118,13 +114,12 @@ public abstract class InternalEnumerateClient<T> extends HalClientMonitor<T>
         // At this point, mEnrolledList only contains templates known to the framework and
         // not the HAL.
         for (int i = 0; i < mEnrolledList.size(); i++) {
-            if (mCleanup) {
-                BiometricAuthenticator.Identifier identifier = mEnrolledList.get(i);
-                Slog.e(TAG, "doTemplateCleanup(): Removing dangling template from framework: "
-                        + identifier.getBiometricId() + " " + identifier.getName());
-                mUtils.removeBiometricForUser(getContext(),
-                        getTargetUserId(), identifier.getBiometricId());
-            }
+            BiometricAuthenticator.Identifier identifier = mEnrolledList.get(i);
+            Slog.e(TAG, "doTemplateCleanup(): Removing dangling template from framework: "
+                    + identifier.getBiometricId() + " " + identifier.getName());
+            mUtils.removeBiometricForUser(getContext(),
+                    getTargetUserId(), identifier.getBiometricId());
+
             getLogger().logUnknownEnrollmentInFramework();
         }
         mEnrolledList.clear();
